@@ -82,26 +82,24 @@ print(f"  aligned shape: {aligned.shape}   (RX, 시점, 서브캐리어)")
 if len(t_grid) < WINDOW:
     print(f"  warning: WINDOW={WINDOW} requires at least {WINDOW} samples")
 
-print(aligned)
 
+# ======================== ③ 윈도잉 → (N, 3, 52, 100) ========================
+T = aligned.shape[1]
+windows = []
+for start in range(0, T - WINDOW + 1, STRIDE):
+    w = aligned[:, start:start+WINDOW, :]   # (3, 100, 52)
+    w = w.transpose(0, 2, 1)                # (3, 52, 100)  ← 모델 입력 순서로
+    windows.append(w) # '리스트'에 추가
 
-# # === ③ 윈도잉 → (N, 3, 52, 100) ===
-# T = aligned.shape[1]
-# windows = []
-# for start in range(0, T - WINDOW + 1, STRIDE):
-#     w = aligned[:, start:start+WINDOW, :]   # (3, 100, 52)
-#     w = w.transpose(0, 2, 1)                # (3, 52, 100)  ← 모델 입력 순서로
-#     windows.append(w)
-#
-# X = np.stack(windows)    # (N, 3, 52, 100)
-# y = np.random.randint(0, 3, size=len(windows))   # 가짜 라벨
-#
-# print(f"\n[3단계] 윈도잉 결과")
-# print(f"  X shape: {X.shape}   ← (윈도 수, RX, 서브캐리어, 시간)")
-# print(f"  y shape: {y.shape}")
-# print(f"  60초 → 윈도 {len(windows)}개 (2초 윈도, 1초 stride)")
-#
-# # === ④ 학습 batch ===
+X = np.stack(windows)    # (N, 3, 52, 100), 4차원 배열로 쌓기, N=윈도 개수
+y = np.random.randint(0, 3, size=len(windows))   # 가짜 라벨, 3-class
+
+print(f"\n[3단계] 윈도잉 결과")
+print(f"  X shape: {X.shape}   ← (윈도 수, RX, 서브캐리어, 시간)")
+print(f"  y shape: {y.shape}")
+print(f"  60초 → 윈도 {len(windows)}개 (2초 윈도, 1초 stride)")
+
+# ======================== ④ 학습 batch ========================
 # B = 32
 # batch_x = X[:B]
 # batch_y = y[:B]
